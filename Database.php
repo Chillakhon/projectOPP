@@ -24,17 +24,14 @@ class Database {
         $this->error = false;
         $this->stm = $this->pdo->prepare($sql);
 
-
         if (count($params))
         {
-
+            $i = 1;
             foreach ($params as $param)
             {
-                $i = 1;
                 $this->stm->bindValue($i,$param);
                 $i++;
             }
-
         }
         if (!$this->stm->execute())
         {
@@ -54,11 +51,50 @@ class Database {
     {
         return $this->result;
     }
+
     public function count()
     {
         return $this->count;
     }
+
     public function get($table,$where = [])
+    {
+        return $this->action('SELECT *',$table,$where);
+    }
+
+    public function delete($table,$where = [])
+    {
+        return $this->action('DELETE',$table,$where);
+    }
+    public function insert($table,$fields = [])
+    {
+        $values = "";
+        foreach ($fields as $field)
+        {
+            $values .= "?,";
+        }
+        $values = rtrim($values,',');
+
+        $sql = "INSERT INTO {$table} (`" . implode('`,`', array_keys($fields))."`) VALUES (".$values.")";
+       $this->query($sql,$fields);
+    }
+
+    public function update($table,$id,$fields = [])
+    {
+        $set = "";
+        foreach ($fields as $key=>$field)
+        {
+            $set .= "{$key} = ?,";
+        }
+        $set = rtrim($set,',');
+        $sql = "UPDATE {$table} SET {$set} WHERE id={$id}";
+        if (!$this->query($sql,$fields)->error())
+        {
+            return true;
+        }
+        return false;
+    }
+    public function action($action,$table,$where = [])
     {
         if (count($where)===3)
         {
@@ -68,14 +104,13 @@ class Database {
             $value = $where[2];
             if (in_array($operator,$operators))
             {
-                $sql = "SELECT * FROM {$table} WHERE {$filed} {$operator} ?";
+                $sql = "$action FROM {$table} WHERE {$filed} {$operator} ?";
                 if (!$this->query($sql,[$value])->error())
                 {
                     return $this;
                 }
             }
         }
-
         return false;
     }
 }
