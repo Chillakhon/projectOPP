@@ -1,26 +1,29 @@
 <?php
 class Database {
     private static  $instance = null;
+
     private  $pdo,$stm,$error=false,$result,$count;
 
     private function __construct()
     {
         try {
-            $this->pdo = new PDO("mysql:host=localhost;dbname=testOPP",'root','root');
+           $this->pdo = new PDO("mysql:host=" . Config::get('mysql.host') . ";dbname=" . Config::get('mysql.database') ."","" . Config::get('mysql.username') ."","" . Config::get('mysql.password') ."");
         }catch (PDOException $exception){
             die($exception->getMessage());
         }
     }
+
     public static function getInstance()
     {
-        if (!isset(self::$instance)){
+        if (!isset(self::$instance))
+        {
             self::$instance = new Database();
         }
         return self::$instance;
     }
+
     public function query ($sql,$params = [])
     {
-
         $this->error = false;
         $this->stm = $this->pdo->prepare($sql);
 
@@ -43,10 +46,12 @@ class Database {
         }
         return $this;
     }
+
     public function error()
     {
         return $this->error;
     }
+
     public function result ()
     {
         return $this->result;
@@ -66,6 +71,7 @@ class Database {
     {
         return $this->action('DELETE',$table,$where);
     }
+
     public function insert($table,$fields = [])
     {
         $values = "";
