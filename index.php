@@ -12,7 +12,7 @@ if ($user->isLoggedIn()) {
     echo "<p> <a href='update.php'> Update Profile </a> </p>";
     echo "<p> <a href='changepassword.php'> Change Password </a> </p>";
 
-    if ($user->hasPermission('admin')){
+    if ($user->hasPermission()){
         echo 'you are admin';
     }
 

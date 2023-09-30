@@ -30,7 +30,7 @@ class User
 
     public function login($email = null, $password = null , $remember = false)
     {
-        if (!$email && !$password) {
+        if (!$email && !$password && $this->exists()) {
             Session::put($this->session_name,$this->data()->id);
         }else {
             $user = $this->find($email);
@@ -85,7 +85,13 @@ class User
 
     public function logout()
     {
+        $this->db->delete('user_sessions',['user_id','=',$this->data()->id]);
          Session::delete($this->session_name);
+         Session::delete($this->cookieName);
+    }
+
+    public function exists(){
+        return (!empty($this->data()))? (true) : (false);
     }
 
     public function update($fields=[],$id=null)
