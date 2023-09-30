@@ -1,12 +1,26 @@
 <?php
 class User
 {
-    private $db,$data,$session_name;
+    private $db,$data,$session_name,$isLoggedIn,$cookieName;
 
-    public function __construct()
+    public function __construct($user = null)
     {
         $this->db = Database::getInstance();
         $this->session_name = Config::get('session.name_session');
+        $this->cookieName = Config::get('cookie.cookie_name');
+
+        if (!$user)
+        {
+            if (Session::exists($this->session_name))
+            $user = Session::get($this->session_name);
+            if ($this->find($user)){
+                $this->isLoggedIn = true;
+            }
+
+        }else{
+            $this->find($user);
+        }
+
     }
 
     public function create ($fields = [])
@@ -14,33 +28,88 @@ class User
         $this->db->insert('users',$fields);
     }
 
-    public function login($email = null, $password = null)
+    public function login($email = null, $password = null , $remember = false)
     {
-        $user = $this->find($email);
-        if ($user)
-        {
-            if (password_verify($password,$this->data()->password)){
-                Session::put($this->session_name,$this->data()->id);
-                return true;
+        if (!$email && !$password) {
+            Session::put($this->session_name,$this->data()->id);
+        }else {
+            $user = $this->find($email);
+            if ($user) {
+                if (password_verify($password, $this->data()->password)) {
+                    Session::put($this->session_name,$this->data()->id);
+                    if ($remember) {
+                        $hash = hash('sha256', uniqid());
+                        $hashCheck = $this->db->get('user_sessions', ['user_id', '=', $this->data()->id]);
+
+                        if (!$hashCheck->count()) {
+                            $this->db->insert('user_sessions',
+                                ['user_id' => $this->data()->id,
+                                    'hash' => $hash
+                                ]);
+                        } else {
+                            $hash = $hashCheck->first()->hash;
+                        }
+                        Cookie::put($this->cookieName, $hash, Config::get('cookie.cookie_expiry'));
+                    }
+
+                    return true;
+                }
             }
         }
-
         return  false;
     }
 
-    public function find ($email = null)
+    public function find ($value = null)
     {
-        if ($email){
-            $this->data = $this->db->get('users',['email','=',$email])->first();
-            if ($this->data) {
-                return true;
-            }
+        if (is_numeric($value))
+        {
+            $this->data = $this->db->get('users',['id','=',$value])->first();
+        }else{
+            $this->data = $this->db->get('users',['email','=',$value])->first();
         }
+        if ($this->data) {
+            return true;
+        }
+
         return false;
     }
 
     public function data()
     {
         return $this->data;
+    }
+    public function isLoggedIn()
+    {
+        return $this->isLoggedIn;
+    }
+
+    public function logout()
+    {
+         Session::delete($this->session_name);
+    }
+
+    public function update($fields=[],$id=null)
+    {
+        if (!$id && $this->isLoggedIn()){
+            $id=$this->data()->id;
+        }
+        $this->db->update('users',$id,$fields);
+    }
+
+    public function hasPermission($kay = null)
+    {
+       $group = $this->db->get('groups',['id','=',$this->data()->group_id]);
+
+           if ($group->count())
+           {
+               $permissions = $group->first()->permission;
+               $permissions = json_decode($permissions,true);
+               if (!empty($kay) && $kay === 'admin'){
+                   if ($permissions[$kay]){
+                       return true;
+                   }
+               }
+       }
+        return false;
     }
 }

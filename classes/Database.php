@@ -7,7 +7,7 @@ class Database {
     private function __construct()
     {
         try {
-           $this->pdo = new PDO("mysql:host=" . Config::get('mysql.host') . ";dbname=" . Config::get('mysql.database') ."","" . Config::get('mysql.username') ."","" . Config::get('mysql.password') ."");
+           $this->pdo = new PDO("mysql:host=" . Config::get('mysql.host') . ";dbname=" . Config::get('mysql.database'), "" . Config::get('mysql.username'), "" . Config::get('mysql.password'));
         }catch (PDOException $exception){
             die($exception->getMessage());
         }
@@ -54,7 +54,7 @@ class Database {
 
     public function result ()
     {
-        return $this->result;
+            return $this->result;
     }
 
     public function count()
@@ -103,7 +103,10 @@ class Database {
 
     public function first()
     {
-        return $this->result()[0];
+        if ($this->result){
+            return $this->result()[0];
+        }
+        return false;
     }
 
     public function action($action,$table,$where = [])

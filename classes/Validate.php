@@ -11,6 +11,7 @@ class Validate
     {
         foreach ($items as $item =>$rules)
         {
+
             foreach ($rules as $rule=>$rule_value)
             {
                 $value = $source[$item];
@@ -77,4 +78,5 @@ class Validate
     {
         return $this->passed;
     }
+
 }
